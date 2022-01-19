@@ -1,33 +1,51 @@
 """
-Tic-Tac-Toe game.
+Inversion Tic-Tac-Toe 10x10 game.
 """
 import random
 
-PLAY_BOARD = [str(num) for num in range(1, 10)]
-PLAYERS_MARKS = ['X', 'O']
 
+class TicTacToe:
+    def __init__(self):
+        self.players_marks = ['X', 'O']
+        self.play_board = [str(num) for num in range(1, 101)]
 
-def display_board(board_list):
-    """Prints the game board."""
-    print(board_list[8] + ' | ' + board_list[7] + ' | ' + board_list[6])
-    print('- | - | -')
-    print(board_list[5] + ' | ' + board_list[4] + ' | ' + board_list[3])
-    print('- | - | -')
-    print(board_list[0] + ' | ' + board_list[1] + ' | ' + board_list[2])
+        self.column_chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'g']
+        self.row_nums = [str(row_num) for row_num in range(1, 11)]
+        self.filled_cells: dict = {}
+        for column_char in self.column_chars:
+            for row_num in self.row_nums:
+                if column_char not in self.filled_cells:
+                    self.filled_cells[column_char]: dict = {}
+                self.filled_cells[column_char][row_num] = "-"
+        print(self.filled_cells)
+        self.player_first: str = ""
+        self.player_second: str = ""
 
+        self._display_board()
 
-def player_input():
-    """Gets player's input string to choose the game mark to play."""
-    player_first = ''
-    while player_first not in ('X', 'O'):
-        player_first = input('Please, choose your marker: X or O: ').upper()
+    def _display_board(self):
+        """Prints the game board."""
+        print(' '*2 + ' | ' + ' | '.join(str(char) for char in self.column_chars))
+        for row_num in self.row_nums:
+            self._display_row(str(row_num))
 
-    if player_first == 'X':
-        player_second = 'O'
-    else:
-        player_second = 'X'
+    def _display_row(self, row_num):
+        """Prints the game board row."""
+        row = f'{row_num}' if len(row_num) == 2 else f' {row_num}'
+        for column_chars in self.column_chars:
+            row += f' | {self.filled_cells[column_chars][row_num]}'
+        print(row)
 
-    return player_first, player_second
+    def _player_input(self):
+        """Gets player's input string to choose the game mark to play."""
+        player_first = ''
+        while player_first not in ('X', 'O'):
+            player_first = input('Please, choose your marker: X or O: ')
+
+        player_second = 'O' if player_first == 'X' else 'X'
+        self.player_first, self.player_second = player_first, player_second
+
+tt = TicTacToe()
 
 
 def place_marker(board, marker, position):
@@ -110,29 +128,28 @@ def check_game_finish(board, mark):
     return False
 
 
-print('Welcome to Tic Tac Toe!')
+# print('Welcome to Tic Tac Toe!')
+#
+# PLAYER_MARKS = player_input()
+# CURRENT_PLAYER_MARK = choose_first()
+#
+# print(f'Player with mark "{CURRENT_PLAYER_MARK}" goes first.')
 
-PLAYER_MARKS = player_input()
-CURRENT_PLAYER_MARK = choose_first()
-
-print(f'Player with mark "{CURRENT_PLAYER_MARK}" goes first.')
-
-while True:
-    display_board(PLAY_BOARD)
-
-    print(f'Turn of the player with the mark "{CURRENT_PLAYER_MARK}":')
-
-    PLAYER_POSITION = player_choice(PLAY_BOARD, CURRENT_PLAYER_MARK)
-    place_marker(PLAY_BOARD, CURRENT_PLAYER_MARK, PLAYER_POSITION)
-
-    if check_game_finish(PLAY_BOARD, CURRENT_PLAYER_MARK):
-        display_board(PLAY_BOARD)
-        if not replay():
-            break
-        else:
-            PLAY_BOARD = [str(num) for num in range(1, 10)]
-            PLAYER_MARKS = player_input()
-            CURRENT_PLAYER_MARK = choose_first()
-    else:
-        CURRENT_PLAYER_MARK = switch_player(CURRENT_PLAYER_MARK)
-    clear_screen()
+# while True:
+    # display_board(PLAY_BOARD)
+    # print(f'Turn of the player with the mark "{CURRENT_PLAYER_MARK}":')
+    #
+    # PLAYER_POSITION = player_choice(PLAY_BOARD, CURRENT_PLAYER_MARK)
+    # place_marker(PLAY_BOARD, CURRENT_PLAYER_MARK, PLAYER_POSITION)
+    #
+    # if check_game_finish(PLAY_BOARD, CURRENT_PLAYER_MARK):
+    #     display_board(PLAY_BOARD)
+    #     if not replay():
+    #         break
+    #     else:
+    #         PLAY_BOARD = [str(num) for num in range(1, 10)]
+    #         PLAYER_MARKS = player_input()
+    #         CURRENT_PLAYER_MARK = choose_first()
+    # else:
+    #     CURRENT_PLAYER_MARK = switch_player(CURRENT_PLAYER_MARK)
+    # clear_screen()
