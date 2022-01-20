@@ -7,25 +7,45 @@ import random
 class TicTacToe:
     def __init__(self):
         self.players_marks = ['X', 'O']
-        self.play_board = [str(num) for num in range(1, 101)]
 
-        self.column_chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'g']
+        self.column_chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
         self.row_nums = [str(row_num) for row_num in range(1, 11)]
-        self.filled_cells: dict = {}
+        self.board: dict = {}
         for column_char in self.column_chars:
             for row_num in self.row_nums:
-                if column_char not in self.filled_cells:
-                    self.filled_cells[column_char]: dict = {}
-                self.filled_cells[column_char][row_num] = "-"
-        print(self.filled_cells)
+                if column_char not in self.board:
+                    self.board[column_char]: dict = {}
+                self.board[column_char][row_num] = False
+
         self.player_first: str = ""
         self.player_second: str = ""
+        self.current_player_mark: str = ""
 
-        self._display_board()
+    def play(self):
+        print('Welcome to Tic Tac Toe!')
+
+        self.player_first, self.player_second = self._player_input()
+        self.current_player_mark = self._choose_first()
+
+        print(f'Player with mark "{self.current_player_mark}" goes first.')
+
+        is_game_over = False
+        while not is_game_over:
+            self._display_board()
+
+            print(f'Turn of the player with the mark "{self.current_player_mark}":')
+
+            player_pos_char, player_pos_num = self._player_choice()
+            self._place_marker(player_pos_char, player_pos_num)
+
+            if self._check_game_finish(player_pos_char, player_pos_num):
+                is_game_over = True
+            else:
+                self.current_player_mark = self._switch_player()
 
     def _display_board(self):
         """Prints the game board."""
-        print(' '*2 + ' | ' + ' | '.join(str(char) for char in self.column_chars))
+        print(' ' * 2 + ' | ' + ' | '.join(str(char) for char in self.column_chars))
         for row_num in self.row_nums:
             self._display_row(str(row_num))
 
@@ -33,74 +53,131 @@ class TicTacToe:
         """Prints the game board row."""
         row = f'{row_num}' if len(row_num) == 2 else f' {row_num}'
         for column_chars in self.column_chars:
-            row += f' | {self.filled_cells[column_chars][row_num]}'
+            if not self.board[column_chars][row_num]:
+                row += f' | -'
+            else:
+                row += f' | {self.board[column_chars][row_num]}'
         print(row)
 
     def _player_input(self):
         """Gets player's input string to choose the game mark to play."""
         player_first = ''
-        while player_first not in ('X', 'O'):
+        while player_first not in self.players_marks:
             player_first = input('Please, choose your marker: X or O: ')
 
         player_second = 'O' if player_first == 'X' else 'X'
-        self.player_first, self.player_second = player_first, player_second
+        return player_first, player_second
 
-tt = TicTacToe()
+    def _place_marker(self, pos_char, pos_num):
+        """Puts a player mark to appropriate position."""
+        self.board[pos_char][pos_num] = self.current_player_mark
 
+    def _get_loss_interval(self, pos):
+        pos_from = (pos - 4) if (pos - 4) >= 0 else 0
+        pos_to = (pos + 4) if (pos + 4) <= 9 else 9
+        return pos_from, pos_to
 
-def place_marker(board, marker, position):
-    """Puts a player mark to appropriate position."""
-    board[position] = marker
+    def _is_loss_line(self, line):
+        return ("X" * 5 in line) or ("O" * 5 in line)
 
+    def _check_horizontal(self, pos_char, pos_num):
+        board, columns, rows = self.board, self.column_chars, self.row_nums
+        char_ind, num_ind = columns.index(pos_char), rows.index(pos_num)
 
-def win_check(board, mark):
-    """Returns boolean value whether the player wins the game."""
-    return (board[0] == board[1] == board[2] == mark) or \
-           (board[5] == board[4] == board[3] == mark) or \
-           (board[8] == board[7] == board[6] == mark) or \
-           (board[0] == board[5] == board[8] == mark) or \
-           (board[1] == board[4] == board[7] == mark) or \
-           (board[2] == board[3] == board[6] == mark)
+        col_from, col_to = self._get_loss_interval(char_ind)
+        horizontal = ""
+        for i in range(col_from, col_to + 1):
+            cell = board[columns[i]][pos_num]
+            horizontal += cell if cell else "-"
+        return self._is_loss_line(horizontal)
 
+    def _check_vertical(self, pos_char, pos_num):
+        board, columns, rows = self.board, self.column_chars, self.row_nums
+        char_ind, num_ind = columns.index(pos_char), rows.index(pos_num)
 
-def choose_first():
-    """Randomly returns the player's mark that goes first."""
-    return PLAYERS_MARKS[random.choice((0, 1))]
+        row_from, row_to = self._get_loss_interval(num_ind)
+        vertical = ""
+        for i in range(row_from, row_to + 1):
+            cell = board[pos_char][rows[i]]
+            vertical += cell if cell else "-"
+        return self._is_loss_line(vertical)
 
+    def _check_diagonal(self, pos_char, pos_num):
+        board, columns, rows = self.board, self.column_chars, self.row_nums
+        char_ind, num_ind = columns.index(pos_char), rows.index(pos_num)
 
-def space_check(board, position):
-    """Returns boolean value whether the cell is free or not."""
-    return board[position] not in PLAYERS_MARKS
+        x, y = char_ind, num_ind
+        diagonal = ""
+        reverse_diagonal = ""
+        for i in range(-4, 5):
+            if 0 <= (x + i) <= 9 and 0 <= (y + i) <= 9:
+                cell = board[columns[x + i]][rows[y + i]]
+                diagonal += cell if cell else "-"
+            if 0 <= (x + i) <= 9 and 0 <= (y - i) <= 9:
+                cell = board[columns[x + i]][rows[y - i]]
+                reverse_diagonal += cell if cell else "-"
+        return (self._is_loss_line(diagonal) or
+                self._is_loss_line(reverse_diagonal))
 
+    def _loss_check(self, pos_char, pos_num):
+        """Returns boolean value whether the player wins the game."""
+        return (self._check_horizontal(pos_char, pos_num)) or \
+               (self._check_vertical(pos_char, pos_num)) or \
+               (self._check_diagonal(pos_char, pos_num))
 
-def full_board_check(board):
-    """Returns boolean value whether the game board is full of game marks."""
-    return len(set(board)) == 2
+    def _choose_first(self):
+        """Randomly returns the player's mark that goes first."""
+        return self.players_marks[random.choice((0, 1))]
 
+    def _space_check(self, pos_char, pos_num):
+        """Returns boolean value whether the cell is free or not."""
+        return self.board[pos_char][pos_num] not in self.players_marks
 
-def player_choice(board, player_mark):
-    """Gets player's next position and check if it's appropriate to play."""
-    position = 0
+    def _full_board_check(self):
+        """Returns boolean value whether the game board is full of game marks."""
+        for row in self.board.values():
+            if False in set(row.values()):
+                return False
+        return True
 
-    while position not in [num for num in range(1, 10)]:
-        try:
-            position = \
-                int(input(f'Player "{player_mark}", choose your next position from 1 to 9: '))
-        except ValueError as exc:
-            print(f'Wrong value: {exc}. Please, try again.')
+    def _player_choice(self):
+        """Gets player's next position and check if it's appropriate to play."""
+        player_mark = self.current_player_mark
+        while True:
+            try:
+                pos = input(f'Player "{player_mark}", your turn (for example, a10): ')
+                pos_char, pos_num = pos[0], pos[1:]
+                if (pos_char in self.board) and (pos_num in self.board[pos_char]) \
+                        and (self._space_check(pos_char, pos_num)):
+                    return pos_char, pos_num
+                else:
+                    raise ValueError
+            except ValueError as exc:
+                print(f'Wrong value: {exc}. Please, try again.')
 
-    position -= 1
-    if space_check(board, position):
-        return position
+    def _switch_player(self):
+        """Switches player's marks to play next turn."""
+        return 'O' if self.current_player_mark == 'X' else 'X'
 
-    return False
+    def _check_game_finish(self, pos_char, pos_num):
+        """Return boolean value is the game finished or not."""
+        if self._loss_check(pos_char, pos_num):
+            winner = self._switch_player()
+            print(f'The player with the mark "{winner}" wins!')
+            return True
+
+        if self._full_board_check():
+            print('The game ended in a draw.')
+            return True
+
+        return False
 
 
 def replay():
     """Asks the players to play again."""
     decision = ''
     while decision not in ('y', 'n'):
-        decision = input('Would you like to play again? Type "y" or "n"').lower()
+        decision = input('Would you like to play again? Type "y" or "n"')
 
     return decision == 'y'
 
@@ -110,46 +187,11 @@ def clear_screen():
     print('\n' * 100)
 
 
-def switch_player(mark):
-    """Switches player's marks to play next turn."""
-    return 'O' if mark == 'X' else 'X'
-
-
-def check_game_finish(board, mark):
-    """Return boolean value is the game finished or not."""
-    if win_check(board, mark):
-        print(f'The player with the mark "{mark}" wins!')
-        return True
-
-    if full_board_check(PLAY_BOARD):
-        print('The game ended in a draw.')
-        return True
-
-    return False
-
-
-# print('Welcome to Tic Tac Toe!')
-#
-# PLAYER_MARKS = player_input()
-# CURRENT_PLAYER_MARK = choose_first()
-#
-# print(f'Player with mark "{CURRENT_PLAYER_MARK}" goes first.')
-
-# while True:
-    # display_board(PLAY_BOARD)
-    # print(f'Turn of the player with the mark "{CURRENT_PLAYER_MARK}":')
-    #
-    # PLAYER_POSITION = player_choice(PLAY_BOARD, CURRENT_PLAYER_MARK)
-    # place_marker(PLAY_BOARD, CURRENT_PLAYER_MARK, PLAYER_POSITION)
-    #
-    # if check_game_finish(PLAY_BOARD, CURRENT_PLAYER_MARK):
-    #     display_board(PLAY_BOARD)
-    #     if not replay():
-    #         break
-    #     else:
-    #         PLAY_BOARD = [str(num) for num in range(1, 10)]
-    #         PLAYER_MARKS = player_input()
-    #         CURRENT_PLAYER_MARK = choose_first()
-    # else:
-    #     CURRENT_PLAYER_MARK = switch_player(CURRENT_PLAYER_MARK)
-    # clear_screen()
+tt = TicTacToe()
+play_game = True
+while play_game:
+    tt.play()
+    if replay():
+        clear_screen()
+    else:
+        play_game = False
